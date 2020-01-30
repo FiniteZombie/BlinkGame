@@ -2,6 +2,7 @@
 
 
 #include "HeroCharacter.h"
+#include "Blink/BlinkComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -19,6 +20,8 @@ AHeroCharacter::AHeroCharacter()
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
+	Duration = 1.f;
+	DashDistance = 500.f;
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -41,6 +44,9 @@ AHeroCharacter::AHeroCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+
+	// Create blink component
+	BlinkComponent = CreateDefaultSubobject<UBlinkComponent>(TEXT("BlinkComponent"));
 }
 
 #pragma region Input
@@ -101,7 +107,31 @@ void AHeroCharacter::LookUpAtRate(float Rate)
 
 void AHeroCharacter::Evade()
 {
-	// Nothing for now
+	if (Controller != nullptr)
+	{
+		const FRotator Rotation = FollowCamera->GetComponentRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+		// Get forward vector
+		FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		// Get right vector
+		FVector Right = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		
+		float MoveForwardAxis = GetInputAxisValue("MoveForward");
+		float MoveRightAxis = GetInputAxisValue("MoveRight");
+
+		Forward *= MoveForwardAxis;
+		Right *= MoveRightAxis;
+		
+		FVector MoveInput = Forward + Right;
+		FVector Direction;
+		float Length;
+		MoveInput.ToDirectionAndLength(Direction, Length);
+		Length = FMath::Min(1.0f, Length);
+		Direction *= Length * DashDistance;
+		PlayAnimMontage(DashMontage, 1.f, "DashEnd");
+		BlinkComponent->BlinkInDirection(Direction, Duration);
+	}
 }
 
 void AHeroCharacter::Attack()

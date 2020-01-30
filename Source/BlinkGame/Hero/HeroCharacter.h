@@ -18,11 +18,23 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Camera)
 	float BaseLookUpRate;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Blink)
+	float Duration;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Blink)
+	float DashDistance;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Blink)
+	UAnimMontage* DashMontage;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	class USpringArmComponent* CameraBoom;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
 	class UCameraComponent* FollowCamera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Blink)
+	class UBlinkComponent* BlinkComponent;
 
 	// Sets default values for this character's properties
 	AHeroCharacter();
