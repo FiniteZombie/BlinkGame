@@ -49,43 +49,43 @@ void UBlinkComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 }
 
 
-void UBlinkComponent::BlinkToAbsolute(const FVector Location, float Duration)
+void UBlinkComponent::BlinkToAbsolute(const FVector Location, float Duration, FBlinkLambdaCallback Callback)
 {
 	if (IsBlinking()) return;
 
-	PrepBlink(Location, Duration);
+	PrepBlink(Location, Duration, Callback);
 }
 
 
-void UBlinkComponent::BlinkInDirection(FVector BlinkDirection, float BlinkDistance, float Duration)
+void UBlinkComponent::BlinkInDirection(FVector BlinkDirection, float BlinkDistance, float Duration, FBlinkLambdaCallback Callback)
 {
 	if (IsBlinking()) return;
 
 	BlinkDirection.Normalize(.1);
 	BlinkDirection *= BlinkDistance;
-	BlinkToRelative(BlinkDirection, Duration);
+	BlinkToRelative(BlinkDirection, Duration, Callback);
 }
 
 
-void UBlinkComponent::BlinkToRelative(FVector RelativeLocation, float Duration)
+void UBlinkComponent::BlinkToRelative(FVector RelativeLocation, float Duration, FBlinkLambdaCallback Callback)
 {
 	if (IsBlinking()) return;
 
 	const FVector ActorLocation = GetOwner()->GetActorLocation();
 	if (RelativeLocation.IsNearlyZero(.1))
 	{
-		BlinkToAbsolute(ActorLocation, Duration);
+		BlinkToAbsolute(ActorLocation, Duration, Callback);
 		return;
 	}
 
-	BlinkToAbsolute(ActorLocation + RelativeLocation, Duration);
+	BlinkToAbsolute(ActorLocation + RelativeLocation, Duration, Callback);
 }
 
 
 void UBlinkComponent::StartBlink(FBlinkCallback Callback)
 {
 	check(bBlinkPrepped);
-	BlinkCallback = Callback;
+	CallbackFromStart = Callback;
 	bBlinking = true;
 	StartLocation = GetOwner()->GetActorLocation();
 	StartTime = GetWorld()->GetTimeSeconds();
@@ -94,11 +94,12 @@ void UBlinkComponent::StartBlink(FBlinkCallback Callback)
 }
 
 
-void UBlinkComponent::PrepBlink(const FVector To, float Duration)
+void UBlinkComponent::PrepBlink(const FVector To, float Duration, FBlinkLambdaCallback Callback)
 {
 	bBlinkPrepped = true;
 	EndLocation = To;
 	BlinkDuration = Duration;
+	CallbackFromPrep = Callback;
 }
 
 
@@ -108,6 +109,7 @@ void UBlinkComponent::EndBlink()
 	bBlinkPrepped = false;
 	GetOwner()->SetActorLocation(EndLocation);
 	GetOwner()->SetActorEnableCollision(true);
-
-	BlinkCallback.ExecuteIfBound();
+	
+	CallbackFromPrep.ExecuteIfBound();
+	CallbackFromStart.ExecuteIfBound();
 }

@@ -11,6 +11,8 @@
 #include "Camera/CameraComponent.h"
 #include "Engine/Engine.h"
 
+#pragma region Constructor
+
 // Sets default values
 AHeroCharacter::AHeroCharacter()
 {
@@ -20,8 +22,9 @@ AHeroCharacter::AHeroCharacter()
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
-	Duration = 1.f;
+	BlinkDuration = 1.f;
 	DashDistance = 500.f;
+	JumpBlinkDistance = 500.f;
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -49,13 +52,15 @@ AHeroCharacter::AHeroCharacter()
 	BlinkComponent = CreateDefaultSubobject<UBlinkComponent>(TEXT("BlinkComponent"));
 }
 
+#pragma endregion Constructor
+
 #pragma region Input
 
 // Called to bind functionality to input
 void AHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AHeroCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 	PlayerInputComponent->BindAction("Evade", IE_Pressed, this, &AHeroCharacter::Evade);
 	PlayerInputComponent->BindAction("Evade", IE_Pressed, this, &AHeroCharacter::Attack);
@@ -105,10 +110,24 @@ void AHeroCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
+void AHeroCharacter::Jump()
+{
+	Super::Jump();
+	FBlinkLambdaCallback Callback;
+	Callback.BindLambda([this] {});
+	BlinkComponent->BlinkToRelative(FVector(0.f, 0.f, JumpBlinkDistance), BlinkDuration, Callback);
+}
+
 void AHeroCharacter::Evade()
 {
 	if (Controller != nullptr)
 	{
+		const float MoveForwardAxis = GetInputAxisValue("MoveForward");
+		const float MoveRightAxis = GetInputAxisValue("MoveRight");
+
+		if (FMath::Abs(MoveForwardAxis) < .1f && FMath::Abs(MoveRightAxis) < .1f)
+			return; // Nothing for now
+		
 		const FRotator Rotation = FollowCamera->GetComponentRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
@@ -116,20 +135,44 @@ void AHeroCharacter::Evade()
 		FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		// Get right vector
 		FVector Right = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		
-		float MoveForwardAxis = GetInputAxisValue("MoveForward");
-		float MoveRightAxis = GetInputAxisValue("MoveRight");
 
 		Forward *= MoveForwardAxis;
 		Right *= MoveRightAxis;
-		
-		FVector MoveInput = Forward + Right;
-		FVector Direction;
+
+		const FVector MoveInput = Forward + Right;
+		FVector NormalDirection;
 		float Length;
-		MoveInput.ToDirectionAndLength(Direction, Length);
+		MoveInput.ToDirectionAndLength(NormalDirection, Length);
+		
 		Length = FMath::Min(1.0f, Length);
-		Direction *= Length * DashDistance;
-		BlinkComponent->BlinkToRelative(Direction, Duration);
+		const FVector Direction = NormalDirection * Length * DashDistance;
+
+		// Figure out which dash to play based on the character's rotation relative to dash direction
+		const FVector ActorForward = GetActorForwardVector();
+		const FVector ActorRight = GetActorRightVector();
+		const float DotForward = FVector::DotProduct(ActorForward, NormalDirection);
+		const float DotRight = FVector::DotProduct(ActorRight, NormalDirection);
+
+		DirectionEnum DashDirection;
+
+		if (FMath::Abs(DotForward) > FMath::Abs(DotRight))
+		{
+			DashDirection = DotForward > 0.f ? DirectionEnum::Fwd : DirectionEnum::Bck;
+		}
+		else
+		{
+			DashDirection = DotRight > 0.f ? DirectionEnum::Right : DirectionEnum::Left;
+		}
+
+		SetActorRotation(ActorForward.Rotation());
+		PlayAnimMontage(DashMontage, 1.f, "FwdDashBegin");
+		
+		FBlinkLambdaCallback Callback;
+		Callback.BindLambda([this, DashDirection]
+			{
+				PlayDashEnd(DashDirection);
+			});
+		BlinkComponent->BlinkToRelative(Direction, BlinkDuration, Callback);
 	}
 }
 
@@ -139,3 +182,27 @@ void AHeroCharacter::Attack()
 }
 
 #pragma endregion Input
+
+#pragma region Helpers
+
+void AHeroCharacter::PlayDashEnd(DirectionEnum Direction)
+{
+	//PlayAnimMontage(DashMontage, 1.f, "LeftDashEnd");
+	switch (Direction)
+	{
+	case Fwd:
+		PlayAnimMontage(DashMontage, 1.f, "FwdDashEnd");
+		break;
+	case Bck:
+		PlayAnimMontage(DashMontage, 1.f, "BckDashEnd");
+		break;
+	case Right:
+		PlayAnimMontage(DashMontage, 1.f, "RightDashEnd");
+		break;
+	case Left:
+		PlayAnimMontage(DashMontage, 1.f, "LeftDashEnd");
+		break;
+	}
+}
+
+#pragma endregion Helpers

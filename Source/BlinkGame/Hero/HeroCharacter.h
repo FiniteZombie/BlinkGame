@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Blink/BlinkComponent.h"
 #include "HeroCharacter.generated.h"
 
 UCLASS()
@@ -19,11 +20,14 @@ public:
 	float BaseLookUpRate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Blink)
-	float Duration;
+	float BlinkDuration;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Blink)
 	float DashDistance;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Blink)
+	float JumpBlinkDistance;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Blink)
 	UAnimMontage* DashMontage;
 
@@ -41,13 +45,20 @@ public:
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE bool IsBlinking() const { return BlinkComponent != nullptr && BlinkComponent->IsBlinking(); }
 
 protected:
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void TurnAtRate(float Rate);
 	void LookUpAtRate(float Rate);
+	void Jump() override;
 	void Evade();
 	void Attack();
 
+private:
+	enum DirectionEnum { Fwd, Bck, Right, Left };
+	void PlayDashEnd(DirectionEnum Direction);
 };

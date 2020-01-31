@@ -10,6 +10,7 @@
 #include "BlinkComponent.generated.h"
 
 DECLARE_DYNAMIC_DELEGATE(FBlinkCallback);
+DECLARE_DELEGATE(FBlinkLambdaCallback);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class BLINKGAME_API UBlinkComponent : public UActorComponent
@@ -31,14 +32,9 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	UFUNCTION(BlueprintCallable)
-	void BlinkToAbsolute(FVector Location, float Duration);
-
-	UFUNCTION(BlueprintCallable)
-	void BlinkInDirection(FVector BlinkDirection, float BlinkDistance, float Duration);
-
-	UFUNCTION(BlueprintCallable)
-	void BlinkToRelative(FVector RelativeLocation, float Duration);
+	void BlinkToAbsolute(FVector Location, float Duration, FBlinkLambdaCallback Callback);
+	void BlinkInDirection(FVector BlinkDirection, float BlinkDistance, float Duration, FBlinkLambdaCallback Callback);
+	void BlinkToRelative(FVector RelativeLocation, float Duration, FBlinkLambdaCallback Callback);
 
 	UFUNCTION(BlueprintCallable)
 	void StartBlink(FBlinkCallback Callback);
@@ -47,7 +43,7 @@ public:
 	FORCEINLINE bool IsBlinking() const { return bBlinking || bBlinkPrepped; }
 
 private:
-	void PrepBlink(FVector To, float Duration);
+	void PrepBlink(FVector To, float Duration, FBlinkLambdaCallback Callback);
 	void EndBlink();
 
 	USkeletalMeshComponent* Mesh;
@@ -57,6 +53,7 @@ private:
 	bool bBlinkPrepped;
 	float StartTime;
 	float EndTime;
-	FBlinkCallback BlinkCallback;
+	FBlinkLambdaCallback CallbackFromPrep;
+	FBlinkCallback CallbackFromStart;
 	float BlinkDuration;
 };
