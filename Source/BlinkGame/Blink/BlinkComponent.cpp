@@ -5,7 +5,6 @@
 #include "GameFramework/Actor.h"
 #include "Engine/World.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "GameFramework/Character.h"
 
 // Sets default values for this component's properties
 UBlinkComponent::UBlinkComponent()
@@ -50,57 +49,65 @@ void UBlinkComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 }
 
 
-void UBlinkComponent::BlinkTo(const FVector Location, float Duration)
+void UBlinkComponent::BlinkToAbsolute(const FVector Location, float Duration)
 {
-	if (bBlinking) return;
+	if (IsBlinking()) return;
 
-	StartBlink(GetOwner()->GetActorLocation(), Location, Duration);
+	PrepBlink(Location, Duration);
 }
 
 
 void UBlinkComponent::BlinkInDirection(FVector BlinkDirection, float BlinkDistance, float Duration)
 {
-	if (bBlinking) return;
+	if (IsBlinking()) return;
 
 	BlinkDirection.Normalize(.1);
 	BlinkDirection *= BlinkDistance;
-	BlinkInDirection(BlinkDirection, Duration);
+	BlinkToRelative(BlinkDirection, Duration);
 }
 
 
-void UBlinkComponent::BlinkInDirection(FVector RelativeLocation, float Duration)
+void UBlinkComponent::BlinkToRelative(FVector RelativeLocation, float Duration)
 {
-	if (bBlinking) return;
+	if (IsBlinking()) return;
 
 	const FVector ActorLocation = GetOwner()->GetActorLocation();
 	if (RelativeLocation.IsNearlyZero(.1))
 	{
-		BlinkTo(ActorLocation, Duration);
+		BlinkToAbsolute(ActorLocation, Duration);
 		return;
 	}
 
-	BlinkTo(ActorLocation + RelativeLocation, Duration);
+	BlinkToAbsolute(ActorLocation + RelativeLocation, Duration);
 }
 
 
-void UBlinkComponent::StartBlink(const FVector From, const FVector To, float Duration)
+void UBlinkComponent::StartBlink(FBlinkCallback Callback)
 {
-	StartLocation = From;
-	EndLocation = To;
-	StartTime = GetWorld()->GetTimeSeconds();
-	EndTime = StartTime + Duration;
+	check(bBlinkPrepped);
+	BlinkCallback = Callback;
 	bBlinking = true;
+	StartLocation = GetOwner()->GetActorLocation();
+	StartTime = GetWorld()->GetTimeSeconds();
+	EndTime = StartTime + BlinkDuration;
 	GetOwner()->SetActorEnableCollision(false);
-	GetOwner()->SetActorHiddenInGame(true);
-	Mesh->bPauseAnims = true;
+}
+
+
+void UBlinkComponent::PrepBlink(const FVector To, float Duration)
+{
+	bBlinkPrepped = true;
+	EndLocation = To;
+	BlinkDuration = Duration;
 }
 
 
 void UBlinkComponent::EndBlink()
 {
-	GetOwner()->SetActorLocation(EndLocation);
 	bBlinking = false;
+	bBlinkPrepped = false;
+	GetOwner()->SetActorLocation(EndLocation);
 	GetOwner()->SetActorEnableCollision(true);
-	GetOwner()->SetActorHiddenInGame(false);
-	Mesh->bPauseAnims = false;
+
+	BlinkCallback.ExecuteIfBound();
 }

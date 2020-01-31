@@ -71,7 +71,7 @@ void AHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 void AHeroCharacter::MoveForward(float Value)
 {
-	if (Controller != nullptr && Value != 0.0f)
+	if (Controller != nullptr && Value != 0.0f && !BlinkComponent->IsBlinking())
 	{
 		const FRotator Rotation = FollowCamera->GetComponentRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -84,7 +84,7 @@ void AHeroCharacter::MoveForward(float Value)
 
 void AHeroCharacter::MoveRight(float Value)
 {
-	if (Controller != nullptr && Value != 0.0f)
+	if (Controller != nullptr && Value != 0.0f && !BlinkComponent->IsBlinking())
 	{
 		const FRotator Rotation = FollowCamera->GetComponentRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -129,8 +129,7 @@ void AHeroCharacter::Evade()
 		MoveInput.ToDirectionAndLength(Direction, Length);
 		Length = FMath::Min(1.0f, Length);
 		Direction *= Length * DashDistance;
-		PlayAnimMontage(DashMontage, 1.f, "DashEnd");
-		BlinkComponent->BlinkInDirection(Direction, Duration);
+		BlinkComponent->BlinkToRelative(Direction, Duration);
 	}
 }
 
