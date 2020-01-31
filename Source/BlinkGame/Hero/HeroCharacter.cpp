@@ -147,30 +147,13 @@ void AHeroCharacter::Evade()
 		Length = FMath::Min(1.0f, Length);
 		const FVector Direction = NormalDirection * Length * DashDistance;
 
-		// Figure out which dash to play based on the character's rotation relative to dash direction
-		const FVector ActorForward = GetActorForwardVector();
-		const FVector ActorRight = GetActorRightVector();
-		const float DotForward = FVector::DotProduct(ActorForward, NormalDirection);
-		const float DotRight = FVector::DotProduct(ActorRight, NormalDirection);
-
-		DirectionEnum DashDirection;
-
-		if (FMath::Abs(DotForward) > FMath::Abs(DotRight))
-		{
-			DashDirection = DotForward > 0.f ? DirectionEnum::Fwd : DirectionEnum::Bck;
-		}
-		else
-		{
-			DashDirection = DotRight > 0.f ? DirectionEnum::Right : DirectionEnum::Left;
-		}
-
-		SetActorRotation(ActorForward.Rotation());
+		SetActorRotation(FRotator(0.f, NormalDirection.Rotation().Yaw, 0.f));
 		PlayAnimMontage(DashMontage, 1.f, "FwdDashBegin");
 		
 		FBlinkLambdaCallback Callback;
-		Callback.BindLambda([this, DashDirection]
+		Callback.BindLambda([this]
 			{
-				PlayDashEnd(DashDirection);
+				PlayAnimMontage(DashMontage, 1.f, "FwdDashEnd");
 			});
 		BlinkComponent->BlinkToRelative(Direction, BlinkDuration, Callback);
 	}
@@ -182,27 +165,3 @@ void AHeroCharacter::Attack()
 }
 
 #pragma endregion Input
-
-#pragma region Helpers
-
-void AHeroCharacter::PlayDashEnd(DirectionEnum Direction)
-{
-	//PlayAnimMontage(DashMontage, 1.f, "LeftDashEnd");
-	switch (Direction)
-	{
-	case Fwd:
-		PlayAnimMontage(DashMontage, 1.f, "FwdDashEnd");
-		break;
-	case Bck:
-		PlayAnimMontage(DashMontage, 1.f, "BckDashEnd");
-		break;
-	case Right:
-		PlayAnimMontage(DashMontage, 1.f, "RightDashEnd");
-		break;
-	case Left:
-		PlayAnimMontage(DashMontage, 1.f, "LeftDashEnd");
-		break;
-	}
-}
-
-#pragma endregion Helpers

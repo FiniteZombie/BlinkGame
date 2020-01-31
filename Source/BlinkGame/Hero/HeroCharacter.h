@@ -57,8 +57,4 @@ protected:
 	void Jump() override;
 	void Evade();
 	void Attack();
-
-private:
-	enum DirectionEnum { Fwd, Bck, Right, Left };
-	void PlayDashEnd(DirectionEnum Direction);
 };
