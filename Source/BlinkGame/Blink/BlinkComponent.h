@@ -42,6 +42,9 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FORCEINLINE bool IsBlinking() const { return bBlinking || bBlinkPrepped; }
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE FVector LastBlinkDirection() const { return EndLocation - StartLocation; }
+
 private:
 	void PrepBlink(FVector To, float Duration, FBlinkLambdaCallback Callback);
 	void EndBlink();
