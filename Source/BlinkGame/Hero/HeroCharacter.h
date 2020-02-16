@@ -40,7 +40,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Blink)
 	class UBlinkComponent* BlinkComponent;
 
-	// Sets default values for this character's properties
 	AHeroCharacter();
 	
 	// Called to bind functionality to input
@@ -50,6 +49,7 @@ public:
 	FORCEINLINE bool IsBlinking() const { return BlinkComponent != nullptr && BlinkComponent->IsBlinking(); }
 
 protected:
+	void Tick(float DeltaSeconds) override;
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void TurnAtRate(float Rate);
@@ -57,4 +57,9 @@ protected:
 	void Jump() override;
 	void Evade();
 	void Attack();
+
+private:
+	void TickEvadeLocation();
+	
+	FVector EvadeTargetLocation;
 };

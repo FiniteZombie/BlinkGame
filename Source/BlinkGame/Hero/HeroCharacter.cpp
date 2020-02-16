@@ -10,12 +10,15 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/Engine.h"
+#include "DrawDebugHelpers.h"
 
 #pragma region Constructor
 
 // Sets default values
 AHeroCharacter::AHeroCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
+	
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -53,6 +56,61 @@ AHeroCharacter::AHeroCharacter()
 }
 
 #pragma endregion Constructor
+
+#pragma region Tick
+void AHeroCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	TickEvadeLocation();
+}
+
+void AHeroCharacter::TickEvadeLocation()
+{
+	EvadeTargetLocation = GetActorLocation();
+	const FVector Down = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * FVector::DownVector;
+	if (Controller != nullptr)
+	{
+		const float MoveForwardAxis = GetInputAxisValue("MoveForward");
+		const float MoveRightAxis = GetInputAxisValue("MoveRight");
+
+		if (FMath::Abs(MoveForwardAxis) >= .1f || FMath::Abs(MoveRightAxis) >= .1f)
+		{
+			const FRotator Rotation = FollowCamera->GetComponentRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+			// Get forward vector
+			FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+			// Get right vector
+			FVector Right = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+			Forward *= MoveForwardAxis;
+			Right *= MoveRightAxis;
+
+			const FVector MoveInput = Forward + Right;
+			FVector NormalDirection;
+			float Length;
+			MoveInput.ToDirectionAndLength(NormalDirection, Length);
+
+			Length = FMath::Min(1.0f, Length);
+			const FVector TargetLocation = NormalDirection * Length * DashDistance + GetActorLocation();
+
+			// Line to unmodified target location
+			DrawDebugLine(GetWorld(), GetActorLocation(), TargetLocation, FColor::Blue);
+			
+			// TODO: Adjust evade target location here
+			EvadeTargetLocation = TargetLocation;
+
+			// Line from unmodified target location to adjusted target on ground
+			DrawDebugLine(GetWorld(), TargetLocation, EvadeTargetLocation + Down, FColor::Blue);
+		}
+	}
+
+	// Circle around target location on ground
+	DrawDebugCircle(GetWorld(), EvadeTargetLocation + Down, 100.f, 50, FColor::Blue,
+		false, -1, 0, 0, FVector(0, 1, 0), FVector(-1, 0, 0));
+}
+#pragma endregion Tick
 
 #pragma region Input
 
@@ -120,43 +178,23 @@ void AHeroCharacter::Jump()
 
 void AHeroCharacter::Evade()
 {
-	if (Controller != nullptr)
-	{
-		const float MoveForwardAxis = GetInputAxisValue("MoveForward");
-		const float MoveRightAxis = GetInputAxisValue("MoveRight");
+	const FVector Direction = EvadeTargetLocation - GetActorLocation();
+	float Length;
+	FVector NormalDirection;
+	Direction.ToDirectionAndLength(NormalDirection, Length);
 
-		if (FMath::Abs(MoveForwardAxis) < .1f && FMath::Abs(MoveRightAxis) < .1f)
-			return; // Nothing for now
-		
-		const FRotator Rotation = FollowCamera->GetComponentRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+	if (Length < .1f)
+		return; // nothing for now
+	
+	SetActorRotation(FRotator(0.f, NormalDirection.Rotation().Yaw, 0.f));
+	PlayAnimMontage(DashMontage, 1.f, "FwdDashBegin");
 
-		// Get forward vector
-		FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		// Get right vector
-		FVector Right = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		Forward *= MoveForwardAxis;
-		Right *= MoveRightAxis;
-
-		const FVector MoveInput = Forward + Right;
-		FVector NormalDirection;
-		float Length;
-		MoveInput.ToDirectionAndLength(NormalDirection, Length);
-		
-		Length = FMath::Min(1.0f, Length);
-		const FVector Direction = NormalDirection * Length * DashDistance;
-
-		SetActorRotation(FRotator(0.f, NormalDirection.Rotation().Yaw, 0.f));
-		PlayAnimMontage(DashMontage, 1.f, "FwdDashBegin");
-		
-		FBlinkLambdaCallback Callback;
-		Callback.BindLambda([this]
-			{
-				PlayAnimMontage(DashMontage, 1.f, "FwdDashEnd");
-			});
-		BlinkComponent->BlinkToRelative(Direction, BlinkDuration, Callback);
-	}
+	FBlinkLambdaCallback Callback;
+	Callback.BindLambda([this]
+		{
+			PlayAnimMontage(DashMontage, 1.f, "FwdDashEnd");
+		});
+	BlinkComponent->BlinkToAbsolute(EvadeTargetLocation, BlinkDuration, Callback);
 }
 
 void AHeroCharacter::Attack()
