@@ -11,6 +11,8 @@
 #include "Camera/CameraComponent.h"
 #include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
+#include "GameMode/CombatManager.h"
+#include "GameFramework/GameModeBase.h"
 
 #pragma region Constructor
 
@@ -58,6 +60,7 @@ AHeroCharacter::AHeroCharacter()
 #pragma endregion Constructor
 
 #pragma region Tick
+
 void AHeroCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);

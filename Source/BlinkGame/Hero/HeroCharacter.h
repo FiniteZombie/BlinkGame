@@ -46,7 +46,16 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FORCEINLINE bool IsBlinking() const { return BlinkComponent != nullptr && BlinkComponent->IsBlinking(); }
+	FORCEINLINE bool IsBlinking() const
+	{
+		return BlinkComponent != nullptr && BlinkComponent->IsBlinking();
+	}
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FORCEINLINE class UCombatManager* GetCombatManager() const
+	{
+		return CombatManager;
+	}
 
 protected:
 	void Tick(float DeltaSeconds) override;
@@ -60,6 +69,7 @@ protected:
 
 private:
 	void TickEvadeLocation();
-	
+
+	class UCombatManager* CombatManager;
 	FVector EvadeTargetLocation;
 };

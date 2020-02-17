@@ -2,6 +2,7 @@
 
 
 #include "CombatManager.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values for this component's properties
 UCombatManager::UCombatManager()
@@ -11,6 +12,16 @@ UCombatManager::UCombatManager()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	// ...
+}
+
+void UCombatManager::RegisterPlayer(ACharacter* Character)
+{
+	Player = Character;
+}
+
+void UCombatManager::RegisterEnemy(ACharacter* Character)
+{
+	Enemies.Add(Character);
 }
 
 
@@ -29,15 +40,14 @@ void UCombatManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
-}
+	if (Player != nullptr)
+	{
+		FVector PlayerLocation = Player->GetActorLocation();
 
-void UCombatManager::RegisterPlayer(ACharacter* Character)
-{
-	Player = Character;
-}
-
-void UCombatManager::RegisterEnemy(ACharacter* Character)
-{
-	Enemies.Add(Character);
+		for (ACharacter* Enemy : Enemies)
+		{
+			FVector EnemyLocation = Enemy->GetActorLocation();
+			DrawDebugLine(GetWorld(), PlayerLocation, EnemyLocation, FColor::Red);
+		}
+	}
 }

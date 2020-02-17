@@ -17,6 +17,12 @@ public:
 	// Sets default values for this component's properties
 	UCombatManager();
 	
+	UFUNCTION(BlueprintCallable)
+	void RegisterPlayer(ACharacter* Character);
+
+	UFUNCTION(BlueprintCallable)
+	void RegisterEnemy(ACharacter* Character);
+	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -31,8 +37,6 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	void RegisterPlayer(ACharacter* Character);
-	void RegisterEnemy(ACharacter* Character);
 
 	ACharacter* Player;
 	TArray<ACharacter*> Enemies;
