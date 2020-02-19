@@ -24,12 +24,14 @@ AHeroCharacter::AHeroCharacter()
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
-	// set our turn rates for input
+	// set defaults
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
 	BlinkDuration = 1.f;
 	DashDistance = 500.f;
 	JumpBlinkDistance = 500.f;
+	AttackBlinkRange = 500.f;
+	AttackBlinkAngle = 45.f;
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -71,47 +73,52 @@ void AHeroCharacter::Tick(float DeltaSeconds)
 void AHeroCharacter::TickEvadeLocation()
 {
 	EvadeTargetLocation = GetActorLocation();
+
+	const FVector MoveInput = GetLastMovementInputVector();
+
+	FVector NormalMoveDirection;
+	float Length;
+	MoveInput.ToDirectionAndLength(NormalMoveDirection, Length);
 	const FVector Down = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * FVector::DownVector;
-	if (Controller != nullptr)
+
+	if (Length > .1f)
 	{
-		const float MoveForwardAxis = GetInputAxisValue("MoveForward");
-		const float MoveRightAxis = GetInputAxisValue("MoveRight");
+		Length = FMath::Min(1.0f, Length);
+		const FVector TargetLocation = NormalMoveDirection * Length * DashDistance + GetActorLocation();
 
-		if (FMath::Abs(MoveForwardAxis) >= .1f || FMath::Abs(MoveRightAxis) >= .1f)
-		{
-			const FRotator Rotation = FollowCamera->GetComponentRotation();
-			const FRotator YawRotation(0, Rotation.Yaw, 0);
+		// Line to unmodified target location
+		DrawDebugLine(GetWorld(), GetActorLocation(), TargetLocation, FColor::Blue);
 
-			// Get forward vector
-			FVector Forward = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-			// Get right vector
-			FVector Right = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		// TODO: Adjust evade target location here
+		EvadeTargetLocation = TargetLocation;
 
-			Forward *= MoveForwardAxis;
-			Right *= MoveRightAxis;
-
-			const FVector MoveInput = Forward + Right;
-			FVector NormalDirection;
-			float Length;
-			MoveInput.ToDirectionAndLength(NormalDirection, Length);
-
-			Length = FMath::Min(1.0f, Length);
-			const FVector TargetLocation = NormalDirection * Length * DashDistance + GetActorLocation();
-
-			// Line to unmodified target location
-			DrawDebugLine(GetWorld(), GetActorLocation(), TargetLocation, FColor::Blue);
-			
-			// TODO: Adjust evade target location here
-			EvadeTargetLocation = TargetLocation;
-
-			// Line from unmodified target location to adjusted target on ground
-			DrawDebugLine(GetWorld(), TargetLocation, EvadeTargetLocation + Down, FColor::Blue);
-		}
+		// Line from unmodified target location to adjusted target on ground
+		DrawDebugLine(GetWorld(), TargetLocation, EvadeTargetLocation + Down, FColor::Blue);
 	}
 
 	// Circle around target location on ground
 	DrawDebugCircle(GetWorld(), EvadeTargetLocation + Down, 100.f, 50, FColor::Blue,
 		false, -1, 0, 0, FVector(0, 1, 0), FVector(-1, 0, 0));
+}
+
+void AHeroCharacter::TickAttackLocation()
+{
+	AttackTargetLocation = GetActorLocation();
+	const FVector MoveInput = GetLastMovementInputVector();
+
+	FVector NormalMoveDirection;
+	float Length;
+	MoveInput.ToDirectionAndLength(NormalMoveDirection, Length);
+	const FVector Down = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * FVector::DownVector;
+
+	if (Length > .1f)
+	{
+		const float Angle = FMath::DegreesToRadians(AttackBlinkAngle);
+		DrawDebugCone(GetWorld(), GetActorLocation(), NormalMoveDirection,
+			AttackBlinkRange, Angle, 0.f, 4, FColor::Yellow);
+
+		
+	}
 }
 #pragma endregion Tick
 

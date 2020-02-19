@@ -40,6 +40,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Blink)
 	class UBlinkComponent* BlinkComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat)
+	float AttackBlinkRange;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat)
+	float AttackBlinkAngle;
+
 	AHeroCharacter();
 	
 	// Called to bind functionality to input
@@ -69,7 +75,9 @@ protected:
 
 private:
 	void TickEvadeLocation();
+	void TickAttackLocation();
 
 	class UCombatManager* CombatManager;
 	FVector EvadeTargetLocation;
+	FVector AttackTargetLocation;
 };
