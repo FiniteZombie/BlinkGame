@@ -32,6 +32,7 @@ AHeroCharacter::AHeroCharacter()
 	JumpBlinkDistance = 500.f;
 	AttackBlinkRange = 500.f;
 	AttackBlinkAngle = 45.f;
+	AttackMeleeDistance = 100.f;
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -63,11 +64,19 @@ AHeroCharacter::AHeroCharacter()
 
 #pragma region Tick
 
+void AHeroCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	auto gameMode = GetWorld()->GetAuthGameMode();
+	CombatManager = static_cast<UCombatManager*>(gameMode->GetComponentByClass(UCombatManager::StaticClass()));
+}
+
 void AHeroCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
 	TickEvadeLocation();
+	TickAttackLocation();
 }
 
 void AHeroCharacter::TickEvadeLocation()
@@ -104,6 +113,7 @@ void AHeroCharacter::TickEvadeLocation()
 void AHeroCharacter::TickAttackLocation()
 {
 	AttackTargetLocation = GetActorLocation();
+	
 	const FVector MoveInput = GetLastMovementInputVector();
 
 	FVector NormalMoveDirection;
@@ -113,11 +123,46 @@ void AHeroCharacter::TickAttackLocation()
 
 	if (Length > .1f)
 	{
-		const float Angle = FMath::DegreesToRadians(AttackBlinkAngle);
+		const float AngleRadians = FMath::DegreesToRadians(AttackBlinkAngle);
 		DrawDebugCone(GetWorld(), GetActorLocation(), NormalMoveDirection,
-			AttackBlinkRange, Angle, 0.f, 4, FColor::Yellow);
+			AttackBlinkRange, AngleRadians, 0.f, 4, FColor::Yellow);
 
-		
+		ACharacter* BestEnemy = nullptr;
+		float BestAngle = 0;
+		FVector ProjectedVector;
+
+		TArray<ACharacter*> Enemies = GetCombatManager()->Enemies;
+		for (auto Enemy : Enemies)
+		{
+			FVector HeroToEnemy = Enemy->GetActorLocation() - GetActorLocation();
+			HeroToEnemy = FVector::VectorPlaneProject(HeroToEnemy, FVector::UpVector);
+			
+			float Distance;
+			FVector Direction;
+			HeroToEnemy.ToDirectionAndLength(Direction, Distance);
+
+			if (Distance < AttackBlinkRange)
+				continue;
+
+			const float Dot = FVector::DotProduct(GetActorForwardVector(), Direction);
+			const float Angle = FMath::RadiansToDegrees(FMath::Acos(Dot));
+
+			if (Angle > AttackBlinkAngle)
+				continue;
+
+			if (BestEnemy == nullptr || Angle < BestAngle)
+			{
+				BestEnemy = Enemy;
+				BestAngle = Angle;
+				ProjectedVector = Direction;
+			}
+		}
+
+		if (BestEnemy != nullptr)
+		{
+			AttackTargetLocation = BestEnemy->GetActorLocation() - (AttackMeleeDistance * ProjectedVector);
+			DrawDebugCircle(GetWorld(), AttackTargetLocation, 100.f, 4, FColor::Yellow);
+		}
 	}
 }
 #pragma endregion Tick

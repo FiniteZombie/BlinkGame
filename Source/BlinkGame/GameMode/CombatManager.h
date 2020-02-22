@@ -13,7 +13,10 @@ class BLINKGAME_API UCombatManager : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
+	UPROPERTY(BlueprintReadOnly)
+	TArray<ACharacter*> Enemies = TArray<ACharacter*>(); //TODO: Make access to this a bit more controlled
+	
 	// Sets default values for this component's properties
 	UCombatManager();
 	
@@ -26,12 +29,6 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	UFUNCTION(BlueprintPure)
-	TArray<ACharacter*> GetEnemies() const
-	{
-		return Enemies;
-	}
-
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -39,5 +36,4 @@ protected:
 private:
 
 	ACharacter* Player;
-	TArray<ACharacter*> Enemies;
 };

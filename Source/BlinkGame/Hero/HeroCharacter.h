@@ -46,6 +46,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat)
 	float AttackBlinkAngle;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat)
+	float AttackMeleeDistance;
+
 	AHeroCharacter();
 	
 	// Called to bind functionality to input
@@ -63,7 +66,7 @@ public:
 		return CombatManager;
 	}
 
-protected:
+	void BeginPlay() override;
 	void Tick(float DeltaSeconds) override;
 	void MoveForward(float Value);
 	void MoveRight(float Value);
