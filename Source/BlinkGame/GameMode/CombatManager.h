@@ -7,7 +7,6 @@
 #include "GameFramework/Character.h"
 #include "CombatManager.generated.h"
 
-
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class BLINKGAME_API UCombatManager : public UActorComponent
 {

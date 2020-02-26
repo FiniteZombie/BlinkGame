@@ -1,0 +1,18 @@
+{
+	"source": "UE",
+	"applications": [
+		{
+			"app_key": "application.generated.ue.blinkgame-11100242.ue4editor.exe",
+			"launch_type": "url",
+			"url": "steam://launch/",
+			"action_manifest_path": "H:/Dev/BlinkGame/Config/SteamVRBindings/steamvr_manifest.json",
+			"strings":
+			{
+				"en_us":
+				{
+					"name": "BlinkGame-11100242 [UE Editor]"
+				}
+			}
+		}
+	]
+}

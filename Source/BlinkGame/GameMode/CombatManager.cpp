@@ -39,15 +39,4 @@ void UCombatManager::BeginPlay()
 void UCombatManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	if (Player != nullptr)
-	{
-		FVector PlayerLocation = Player->GetActorLocation();
-
-		for (ACharacter* Enemy : Enemies)
-		{
-			FVector EnemyLocation = Enemy->GetActorLocation();
-			DrawDebugLine(GetWorld(), PlayerLocation, EnemyLocation, FColor::Red);
-		}
-	}
 }

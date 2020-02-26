@@ -109,7 +109,7 @@ void UBlinkComponent::EndBlink()
 	bBlinkPrepped = false;
 	GetOwner()->SetActorLocation(EndLocation);
 	GetOwner()->SetActorEnableCollision(true);
-	
+
 	CallbackFromPrep.ExecuteIfBound();
 	CallbackFromStart.ExecuteIfBound();
 }

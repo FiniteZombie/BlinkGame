@@ -12,7 +12,9 @@
 #include "Engine/Engine.h"
 #include "DrawDebugHelpers.h"
 #include "GameMode/CombatManager.h"
+#include "Util/DebugUtil.h"
 #include "GameFramework/GameModeBase.h"
+#include "Combat/ComboInterface.h"
 
 #pragma region Constructor
 
@@ -106,14 +108,14 @@ void AHeroCharacter::TickEvadeLocation()
 	}
 
 	// Circle around target location on ground
-	DrawDebugCircle(GetWorld(), EvadeTargetLocation + Down, 100.f, 50, FColor::Blue,
-		false, -1, 0, 0, FVector(0, 1, 0), FVector(-1, 0, 0));
+	DebugCircleUp(EvadeTargetLocation + Down, 50, FColor::Blue);
 }
 
 void AHeroCharacter::TickAttackLocation()
 {
 	AttackTargetLocation = GetActorLocation();
-	
+	AttackTargetCharacter = nullptr;
+
 	const FVector MoveInput = GetLastMovementInputVector();
 
 	FVector NormalMoveDirection;
@@ -121,47 +123,57 @@ void AHeroCharacter::TickAttackLocation()
 	MoveInput.ToDirectionAndLength(NormalMoveDirection, Length);
 	const FVector Down = GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * FVector::DownVector;
 
+	if (DebugAllowBlinkAttackWhileStill && Length <= .1f)
+	{
+		NormalMoveDirection = GetActorForwardVector();
+		Length = 1.f;
+	}
+
 	if (Length > .1f)
 	{
 		const float AngleRadians = FMath::DegreesToRadians(AttackBlinkAngle);
-		DrawDebugCone(GetWorld(), GetActorLocation(), NormalMoveDirection,
-			AttackBlinkRange, AngleRadians, 0.f, 4, FColor::Yellow);
+		DebugUtil::DrawDebugSector(GetWorld(), GetActorLocation(), NormalMoveDirection, AttackBlinkRange, 2 * AttackBlinkAngle, 5, FColor::Yellow);
 
-		ACharacter* BestEnemy = nullptr;
-		float BestAngle = 0;
+		float BestAngle = 180;
 		FVector ProjectedVector;
 
 		TArray<ACharacter*> Enemies = GetCombatManager()->Enemies;
 		for (auto Enemy : Enemies)
 		{
-			FVector HeroToEnemy = Enemy->GetActorLocation() - GetActorLocation();
+			FVector EnemyLocation = Enemy->GetActorLocation();
+			FVector HeroToEnemy = EnemyLocation - GetActorLocation();
 			HeroToEnemy = FVector::VectorPlaneProject(HeroToEnemy, FVector::UpVector);
 			
 			float Distance;
 			FVector Direction;
 			HeroToEnemy.ToDirectionAndLength(Direction, Distance);
 
-			if (Distance < AttackBlinkRange)
-				continue;
-
-			const float Dot = FVector::DotProduct(GetActorForwardVector(), Direction);
+			const float Dot = FVector::DotProduct(NormalMoveDirection, Direction);
 			const float Angle = FMath::RadiansToDegrees(FMath::Acos(Dot));
 
-			if (Angle > AttackBlinkAngle)
+			DrawDebugLine(GetWorld(), EnemyLocation, GetActorLocation(), FColor::Red);
+			
+			if (Angle < AttackBlinkAngle)
+			{
+				const FVector ErrorLine = (AttackBlinkRange - Distance) * Direction;
+				DrawDebugLine(GetWorld(), EnemyLocation, EnemyLocation + ErrorLine, FColor::Yellow);
+			}
+
+			if (Distance > AttackBlinkRange || Angle > AttackBlinkAngle)
 				continue;
 
-			if (BestEnemy == nullptr || Angle < BestAngle)
+			if (AttackTargetCharacter == nullptr || Angle < BestAngle)
 			{
-				BestEnemy = Enemy;
+				AttackTargetCharacter = Enemy;
 				BestAngle = Angle;
 				ProjectedVector = Direction;
 			}
 		}
 
-		if (BestEnemy != nullptr)
+		if (AttackTargetCharacter != nullptr)
 		{
-			AttackTargetLocation = BestEnemy->GetActorLocation() - (AttackMeleeDistance * ProjectedVector);
-			DrawDebugCircle(GetWorld(), AttackTargetLocation, 100.f, 4, FColor::Yellow);
+			AttackTargetLocation = AttackTargetCharacter->GetActorLocation() - (AttackMeleeDistance * ProjectedVector);
+			DebugCircleUp(AttackTargetLocation, 4, FColor::Yellow);
 		}
 	}
 }
@@ -176,7 +188,7 @@ void AHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AHeroCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 	PlayerInputComponent->BindAction("Evade", IE_Pressed, this, &AHeroCharacter::Evade);
-	PlayerInputComponent->BindAction("Evade", IE_Pressed, this, &AHeroCharacter::Attack);
+	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AHeroCharacter::Attack);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AHeroCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AHeroCharacter::MoveRight);
@@ -226,9 +238,7 @@ void AHeroCharacter::LookUpAtRate(float Rate)
 void AHeroCharacter::Jump()
 {
 	Super::Jump();
-	FBlinkLambdaCallback Callback;
-	Callback.BindLambda([this] {});
-	BlinkComponent->BlinkToRelative(FVector(0.f, 0.f, JumpBlinkDistance), BlinkDuration, Callback);
+	BlinkComponent->BlinkToRelative(FVector(0.f, 0.f, JumpBlinkDistance), BlinkDuration, nullptr);
 }
 
 void AHeroCharacter::Evade()
@@ -254,7 +264,23 @@ void AHeroCharacter::Evade()
 
 void AHeroCharacter::Attack()
 {
-	// Nothing for now
+	const auto Obj = LightAttackCombo.GetObject();
+	LightAttackCombo->Execute_Play(Obj);
+	
+	if (AttackTargetCharacter != nullptr)
+	{
+		// Rotate hero so they are facing their target while attacking
+		const float Distance = FVector::Distance(AttackTargetLocation, GetActorLocation());
+
+		if (Distance > .1f)
+		{
+			const FVector TargetToEnemy = AttackTargetCharacter->GetActorLocation() - AttackTargetLocation;
+			const FVector Direction = TargetToEnemy.GetUnsafeNormal();
+			
+			SetActorRotation(FRotator(0.f, Direction.Rotation().Yaw, 0.f));
+			BlinkComponent->BlinkToAbsolute(AttackTargetLocation, BlinkDuration, nullptr);
+		}
+	}
 }
 
 #pragma endregion Input

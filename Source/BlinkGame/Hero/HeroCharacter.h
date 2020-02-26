@@ -41,6 +41,9 @@ public:
 	class UBlinkComponent* BlinkComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat)
+	TScriptInterface<class IComboInterface> LightAttackCombo;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat)
 	float AttackBlinkRange;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat)
@@ -48,6 +51,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat)
 	float AttackMeleeDistance;
+
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Combat)
+	bool DebugAllowBlinkAttackWhileStill;
 
 	AHeroCharacter();
 	
@@ -83,4 +89,5 @@ private:
 	class UCombatManager* CombatManager;
 	FVector EvadeTargetLocation;
 	FVector AttackTargetLocation;
+	ACharacter* AttackTargetCharacter;
 };
