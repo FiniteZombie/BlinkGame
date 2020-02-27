@@ -3,3 +3,7 @@
 
 #include "BlinkGameGameModeBase.h"
 
+void ABlinkGameGameModeBase::ToggleDrawDebug()
+{
+	bShowDrawDebug = !bShowDrawDebug;
+}

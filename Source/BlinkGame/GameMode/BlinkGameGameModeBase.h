@@ -13,5 +13,11 @@ UCLASS()
 class BLINKGAME_API ABlinkGameGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
-	
+
+public:
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Debug)
+	bool bShowDrawDebug;
+
+	UFUNCTION(Exec, Category = ExecFunctions)
+	void ToggleDrawDebug();
 };

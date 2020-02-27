@@ -10,9 +10,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/Engine.h"
-#include "DrawDebugHelpers.h"
 #include "GameMode/CombatManager.h"
-#include "Util/DebugUtil.h"
+#include "Util/DrawDebugLibrary.h"
 #include "GameFramework/GameModeBase.h"
 #include "Combat/ComboInterface.h"
 
@@ -98,17 +97,17 @@ void AHeroCharacter::TickEvadeLocation()
 		const FVector TargetLocation = NormalMoveDirection * Length * DashDistance + GetActorLocation();
 
 		// Line to unmodified target location
-		DrawDebugLine(GetWorld(), GetActorLocation(), TargetLocation, FColor::Blue);
+		UDrawDebugLibrary::DrawLine(GetWorld(), GetActorLocation(), TargetLocation, FColor::Blue);
 
 		// TODO: Adjust evade target location here
 		EvadeTargetLocation = TargetLocation;
 
 		// Line from unmodified target location to adjusted target on ground
-		DrawDebugLine(GetWorld(), TargetLocation, EvadeTargetLocation + Down, FColor::Blue);
+		UDrawDebugLibrary::DrawLine(GetWorld(), TargetLocation, EvadeTargetLocation + Down, FColor::Blue);
 	}
 
 	// Circle around target location on ground
-	DebugCircleUp(EvadeTargetLocation + Down, 50, FColor::Blue);
+	UDrawDebugLibrary::DrawCircleUp(GetWorld(), EvadeTargetLocation + Down, 50, FColor::Blue);
 }
 
 void AHeroCharacter::TickAttackLocation()
@@ -132,7 +131,7 @@ void AHeroCharacter::TickAttackLocation()
 	if (Length > .1f)
 	{
 		const float AngleRadians = FMath::DegreesToRadians(AttackBlinkAngle);
-		DebugUtil::DrawDebugSector(GetWorld(), GetActorLocation(), NormalMoveDirection, AttackBlinkRange, 2 * AttackBlinkAngle, 5, FColor::Yellow);
+		UDrawDebugLibrary::DrawSector(GetWorld(), GetActorLocation(), NormalMoveDirection, AttackBlinkRange, 2 * AttackBlinkAngle, 5, FColor::Yellow);
 
 		float BestAngle = 180;
 		FVector ProjectedVector;
@@ -151,12 +150,12 @@ void AHeroCharacter::TickAttackLocation()
 			const float Dot = FVector::DotProduct(NormalMoveDirection, Direction);
 			const float Angle = FMath::RadiansToDegrees(FMath::Acos(Dot));
 
-			DrawDebugLine(GetWorld(), EnemyLocation, GetActorLocation(), FColor::Red);
+			UDrawDebugLibrary::DrawLine(GetWorld(), EnemyLocation, GetActorLocation(), FColor::Red);
 			
 			if (Angle < AttackBlinkAngle)
 			{
 				const FVector ErrorLine = (AttackBlinkRange - Distance) * Direction;
-				DrawDebugLine(GetWorld(), EnemyLocation, EnemyLocation + ErrorLine, FColor::Yellow);
+				UDrawDebugLibrary::DrawLine(GetWorld(), EnemyLocation, EnemyLocation + ErrorLine, FColor::Yellow);
 			}
 
 			if (Distance > AttackBlinkRange || Angle > AttackBlinkAngle)
@@ -173,7 +172,7 @@ void AHeroCharacter::TickAttackLocation()
 		if (AttackTargetCharacter != nullptr)
 		{
 			AttackTargetLocation = AttackTargetCharacter->GetActorLocation() - (AttackMeleeDistance * ProjectedVector);
-			DebugCircleUp(AttackTargetLocation, 4, FColor::Yellow);
+			UDrawDebugLibrary::DrawCircleUp(GetWorld(), AttackTargetLocation, 4, FColor::Yellow);
 		}
 	}
 }
