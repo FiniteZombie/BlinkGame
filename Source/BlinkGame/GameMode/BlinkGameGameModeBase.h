@@ -20,4 +20,7 @@ public:
 
 	UFUNCTION(Exec, Category = ExecFunctions)
 	void ToggleDrawDebug();
+
+	UFUNCTION(Exec, Category = ExecFunctions)
+	void SetTimeDilation(float Ratio) const;
 };
