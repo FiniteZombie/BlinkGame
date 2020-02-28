@@ -82,6 +82,10 @@ public:
 	void Evade();
 	void Attack();
 
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat)
+	bool bAttackDisabled;
+
 private:
 	void TickEvadeLocation();
 	void TickAttackLocation();

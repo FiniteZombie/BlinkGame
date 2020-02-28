@@ -263,6 +263,11 @@ void AHeroCharacter::Evade()
 
 void AHeroCharacter::Attack()
 {
+	if (bAttackDisabled)
+		return;
+
+	bAttackDisabled = true;
+	
 	const auto Obj = LightAttackCombo.GetObject();
 	LightAttackCombo->Execute_Play(Obj);
 	
