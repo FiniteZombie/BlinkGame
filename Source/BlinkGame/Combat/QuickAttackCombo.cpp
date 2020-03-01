@@ -3,6 +3,9 @@
 
 #include "QuickAttackCombo.h"
 #include "GameFramework/Character.h"
+#include "Engine/World.h"
+#include "Util/DrawDebugLibrary.h"
+#include <string>
 
 // Sets default values for this component's properties
 UQuickAttackCombo::UQuickAttackCombo()
@@ -11,7 +14,9 @@ UQuickAttackCombo::UQuickAttackCombo()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// ...
+	InputInterval = 1.f;
+	IntervalShrinkRate = 0.95f;
+	NextAttackTime = FLT_MAX;
 }
 
 
@@ -29,7 +34,17 @@ void UQuickAttackCombo::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+	const float CurrentTime = GetWorld()->GetTimeSeconds();
+	const float TimeSinceLastInput = CurrentTime - LastInputTimeStamp;
+
+	if (NextAttackTime < CurrentTime && TimeSinceLastInput < InputInterval)
+		Attack();
+}
+
+void UQuickAttackCombo::Play_Implementation()
+{
+	LastInputTimeStamp = GetWorld()->GetTimeSeconds();
+	Attack();
 }
 
 void UQuickAttackCombo::SetSection(int NewSectionOverride)
@@ -38,9 +53,12 @@ void UQuickAttackCombo::SetSection(int NewSectionOverride)
 		SectionOverride = NewSectionOverride;
 }
 
-void UQuickAttackCombo::Play_Implementation()
+void UQuickAttackCombo::Attack()
 {
 	if (Character == nullptr)
+		return;
+
+	if (bWaitingForAnim)
 		return;
 
 	if (CurrentSection >= SectionNames.Num() || CurrentSection < 0)
@@ -49,5 +67,13 @@ void UQuickAttackCombo::Play_Implementation()
 	const FName SectionName = SectionNames[CurrentSection];
 	Character->PlayAnimMontage(Montage, 1.f, SectionName);
 	CurrentSection++;
+
+	const float CurrentTime = GetWorld()->GetTimeSeconds();
+	float Interval = CurrentTime - LastAttackTimeStamp;
+	Interval *= IntervalShrinkRate;
+	NextAttackTime = CurrentTime + Interval;
+	
+	LastAttackTimeStamp = CurrentTime;
+	bWaitingForAnim = true;
 }
 

@@ -18,16 +18,16 @@ private:
 	float InputInterval;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Timing, meta = (AllowPrivateAccess = "true"))
-	float RampUpTime;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Timing, meta = (AllowPrivateAccess = "true"))
-	class UCurveFloat* RampCurve;
+	float IntervalShrinkRate;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Anim, meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* Montage;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Anim, meta = (AllowPrivateAccess = "true"))
 	TArray<FName> SectionNames;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Anim, meta = (AllowPrivateAccess = "true"))
+	bool bWaitingForAnim;
 
 public:	
 	// Sets default values for this component's properties
@@ -48,8 +48,11 @@ public:
 	void SetSection(int NewSectionOverride);
 
 private:
-	bool bIsQuickAttacking;
-	float ElapsedTime;
+	void Attack();
+
+	float LastInputTimeStamp;
+	float LastAttackTimeStamp;
+	float NextAttackTime;
 	class ACharacter* Character;
 	int CurrentSection;
 	int SectionOverride;
