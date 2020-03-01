@@ -4,7 +4,6 @@
 #include "QuickAttackCombo.h"
 #include "GameFramework/Character.h"
 #include "Engine/World.h"
-#include "Util/DrawDebugLibrary.h"
 #include <string>
 
 // Sets default values for this component's properties
@@ -45,6 +44,11 @@ void UQuickAttackCombo::Play_Implementation()
 {
 	LastInputTimeStamp = GetWorld()->GetTimeSeconds();
 	Attack();
+}
+
+void UQuickAttackCombo::CancelAnimWait_Implementation()
+{
+	bWaitingForAnim = false;
 }
 
 void UQuickAttackCombo::SetSection(int NewSectionOverride)

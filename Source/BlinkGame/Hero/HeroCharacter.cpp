@@ -242,6 +242,11 @@ void AHeroCharacter::Jump()
 
 void AHeroCharacter::Evade()
 {
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	bAttackDisabled = false;
+	const auto Obj = LightAttackCombo.GetObject();
+	LightAttackCombo->Execute_CancelAnimWait(Obj);
+	
 	const FVector Direction = EvadeTargetLocation - GetActorLocation();
 	float Length;
 	FVector NormalDirection;

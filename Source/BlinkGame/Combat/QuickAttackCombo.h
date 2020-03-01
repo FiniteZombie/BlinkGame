@@ -26,9 +26,6 @@ private:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Anim, meta = (AllowPrivateAccess = "true"))
 	TArray<FName> SectionNames;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = Anim, meta = (AllowPrivateAccess = "true"))
-	bool bWaitingForAnim;
-
 public:	
 	// Sets default values for this component's properties
 	UQuickAttackCombo();
@@ -43,6 +40,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Combo)
 	void Play();
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Anim)
+	void CancelAnimWait();
 
 	UFUNCTION(Exec, Category = ExecFunctions)
 	void SetSection(int NewSectionOverride);
@@ -56,4 +56,5 @@ private:
 	class ACharacter* Character;
 	int CurrentSection;
 	int SectionOverride;
+	bool bWaitingForAnim;
 };
