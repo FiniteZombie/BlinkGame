@@ -55,9 +55,6 @@ public:
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Combat)
 	bool DebugAllowBlinkAttackWhileStill;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat)
-	bool bAttackDisabled;
-
 	AHeroCharacter();
 	
 	// Called to bind functionality to input

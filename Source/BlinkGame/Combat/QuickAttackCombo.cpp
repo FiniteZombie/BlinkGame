@@ -40,15 +40,20 @@ void UQuickAttackCombo::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 		Attack();
 }
 
+bool UQuickAttackCombo::GetAnimWait_Implementation() const
+{
+	return bWaitingForAnim;
+}
+
+void UQuickAttackCombo::SetAnimWait_Implementation(bool NewAnimWait)
+{
+	bWaitingForAnim = NewAnimWait;
+}
+
 void UQuickAttackCombo::Play_Implementation()
 {
 	LastInputTimeStamp = GetWorld()->GetTimeSeconds();
 	Attack();
-}
-
-void UQuickAttackCombo::CancelAnimWait_Implementation()
-{
-	bWaitingForAnim = false;
 }
 
 void UQuickAttackCombo::SetSection(int NewSectionOverride)
@@ -61,6 +66,13 @@ void UQuickAttackCombo::Attack()
 {
 	if (Character == nullptr)
 		return;
+
+	UAnimMontage* CurrentMontage = Character->GetCurrentMontage();
+	if (CurrentMontage != nullptr && CurrentMontage != Montage)
+	{
+		bWaitingForAnim = false;
+		return;
+	}
 
 	if (bWaitingForAnim)
 		return;

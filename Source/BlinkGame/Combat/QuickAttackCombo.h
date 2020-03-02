@@ -40,9 +40,12 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Combo)
 	void Play();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Anim)
+	bool GetAnimWait() const;
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Anim)
-	void CancelAnimWait();
+	void SetAnimWait(bool NewAnimWait);
 
 	UFUNCTION(Exec, Category = ExecFunctions)
 	void SetSection(int NewSectionOverride);
