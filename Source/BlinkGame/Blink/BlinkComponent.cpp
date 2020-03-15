@@ -43,7 +43,7 @@ void UBlinkComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 			t = BlinkCurve->GetFloatValue(t);
 			FVector newLoc = FMath::Lerp(StartLocation, EndLocation, t);
 
-			GetOwner()->SetActorLocation(newLoc, false, nullptr, ETeleportType::ResetPhysics);
+			GetOwner()->SetActorLocation(newLoc, false, nullptr, ETeleportType::TeleportPhysics);
 		}
 	}
 }

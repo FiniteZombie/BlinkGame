@@ -242,7 +242,8 @@ void AHeroCharacter::Jump()
 
 void AHeroCharacter::Evade()
 {
-	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	if (!GetCharacterMovement()->IsFalling())
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 	const auto Obj = LightAttackCombo.GetObject();
 	LightAttackCombo->Execute_SetAnimWait(Obj, false);
 	
