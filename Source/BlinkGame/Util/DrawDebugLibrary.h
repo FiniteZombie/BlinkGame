@@ -23,7 +23,7 @@ public:
 	static UWorld* GetWorldFromComponent(UActorComponent* Component);
 	
 	UFUNCTION(BlueprintCallable, Category = "DrawDebug")
-	static void Print(UWorld* World, int Key, FString Text);
+	static void Print(UWorld* World, int Key, FString Text, float Duration);
 
 	UFUNCTION(BlueprintCallable, Category = "DrawDebug")
 	static void DrawSector(

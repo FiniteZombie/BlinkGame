@@ -15,10 +15,10 @@ UWorld* UDrawDebugLibrary::GetWorldFromComponent(UActorComponent* Component)
 	return Component->GetWorld();
 }
 
-void UDrawDebugLibrary::Print(UWorld* World, int Key, FString Text)
+void UDrawDebugLibrary::Print(UWorld* World, int Key, FString Text, float duration = 0.f)
 {
 	if (IsDrawDebugDisabled(World)) return;
-	if (GEngine) GEngine->AddOnScreenDebugMessage(Key, 0, FColor::White, Text);
+	if (GEngine) GEngine->AddOnScreenDebugMessage(Key, duration, FColor::White, Text);
 }
 
 void UDrawDebugLibrary::DrawSector(
